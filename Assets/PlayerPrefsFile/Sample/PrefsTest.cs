@@ -8,7 +8,9 @@ public enum TEST_ENUM
     A, B, C
 }
 
-public class PrefsTest : MonoBehaviour {
+// 通常のPlayerPrefsと同じように使えるように。保存されるPathは固定で1箇所。
+public class PrefsTest : MonoBehaviour
+{
 
     [SerializeField] int test1 = 1;
     [SerializeField] float test2 = 2f;
@@ -21,8 +23,14 @@ public class PrefsTest : MonoBehaviour {
 
     [SerializeField] TEST_ENUM enumType;
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start() {
+        PlayerPrefsFile.dataPath = Application.streamingAssetsPath + "/saveData/savedData.txt";
+        LoadSetting();
+
+    }
+
+    void LoadSetting() {
         test1 = PlayerPrefsFile.GetInt("test1", test1);
         test2 = PlayerPrefsFile.GetFloat("test2", test2);
         test3 = PlayerPrefsFile.GetString("test3", test3);
@@ -33,22 +41,11 @@ public class PrefsTest : MonoBehaviour {
         boolean = PlayerPrefsFile.GetBool("boolean", boolean);
 
         enumType = (TEST_ENUM)PlayerPrefsFile.GetEnum("enumType", enumType);
-
-        //PlayerPrefsExtra.SetInt("test1", 1);
-        //PlayerPrefsExtra.SetFloat("test2", 2);
-        //PlayerPrefsExtra.SetString("test3", "test");
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+    }
 
     [ContextMenu("Save")]
-    void Save()
-    {
+    void Save() {
         Debug.LogWarning(PlayerPrefsFile.GetSavedString());
-
         PlayerPrefsFile.SetInt("test1", test1);
         PlayerPrefsFile.SetFloat("test2", test2);
         PlayerPrefsFile.SetString("test3", test3);
@@ -60,12 +57,11 @@ public class PrefsTest : MonoBehaviour {
 
         PlayerPrefsFile.SetEnum("enumType", enumType);
 
-        PlayerPrefsFile.Save(); // write file
+        PlayerPrefsFile.Save();// write file
     }
 
     [ContextMenu("DeleteAll")]
-    void Delete()
-    {
+    void Delete() {
         PlayerPrefsFile.DeleteAll();
     }
 }

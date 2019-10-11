@@ -1,0 +1,13 @@
+test1,INT,1
+test2,FLOAT,2
+test3,STRING,test
+
+// 色のテスト
+testColor,COLOR,0.1237565,0.7173406,0.8014706,1
+rect,RECT,10,10,200,200
+
+// Vectors
+vec2,VECTOR2,111,222
+vec3,VECTOR3,3333,4444,5555
+boolean,BOOL,True
+enumType,ENUM,C,TEST_ENUM

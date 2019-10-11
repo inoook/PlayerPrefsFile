@@ -1,9 +1,0 @@
-test1,INT,1
-test2,FLOAT,2
-test3,STRING,test
-testColor,COLOR,0,0.3379312,1,1
-rect,RECT,10,10,200,200
-vec2,VECTOR2,1,2
-vec3,VECTOR3,3,4,5
-boolean,BOOL,False
-enumType,ENUM,C,TEST_ENUM

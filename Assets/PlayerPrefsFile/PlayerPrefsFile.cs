@@ -6,413 +6,181 @@ using System.Collections;
 using System.Collections.Generic;
 
 
-public static class PlayerPrefsFile  {
-    
-    public enum PrefType
-    {
-        INT, FLOAT, STRING, BOOL, COLOR, VECTOR2, VECTOR3, RECT, ENUM
-    }
-    public class Pref
-    {
-        public string key;
-        public PrefType type;
-        public object v;
+public static class PlayerPrefsFile
+{
+    private static Dictionary<string, PlayerPrefsFileObject> keyAndInstance = null;
+    public static string dataPath = Application.streamingAssetsPath + "/savedData.txt";
 
-        public Pref(string key_, PrefType type_, object v_)
-        {
-            key = key_;
-            type = type_;
-            v = v_;
-        }
-    }
-	
-    private static Dictionary<string, Pref> keyAndValues = null;
-    public static string dataPath = Application.dataPath + "/savedData.txt";
+    private static PlayerPrefsFileObject currentInstance = null;
 
-#region save and load
-    public static void Save()
-    {
-        WriteToFile();
+    #region save and load
+    public static void SavePrepare(string path) {
+        CreateInstanceByPath(path);
     }
-    public static string GetSavedString()
-    {
-        return GetAllKeyAndValues();
+    public static void Save() {
+        string path = dataPath; // default Data Path
+        currentInstance.Save(path);
     }
 
-    static void WriteToFile()
-    {
-        string str = GetAllKeyAndValues();
-        byte[] bytes = Encoding.UTF8.GetBytes(str);
-        
-        string path = dataPath;
-        File.WriteAllBytes(path, bytes);
+    public static string GetSavedString() {
+        return currentInstance.GetAllKeyAndValues();
     }
 
-    public static void Load()
-    {
-        if (keyAndValues != null) { return; }
-
-        string path = dataPath;
-        LoadFromFile(path);
+    public static void Load(string path) {
+        CreateInstanceByPath(path);
+        currentInstance.Load();
     }
 
-    static void LoadFromFile(string path)
-    {
-        keyAndValues = new Dictionary<string, Pref>();
-
-        if (!File.Exists(path))
-        {
-            // no file
-            return;
-        }
-        using (System.IO.StreamReader reader = new System.IO.StreamReader(path))
-        {
-            string str = reader.ReadToEnd();
-
-            string[] splitStr = str.Split('\n');
-
-            for (int i = 0; i < splitStr.Length; i++)
-            {
-                string[] prefLine = splitStr[i].Split(',');
-                if (prefLine.Length > 2)
-                {
-                    string key = prefLine[0];
-                    string t = prefLine[1];
-                    PrefType type = PrefType.FLOAT;
-                    object v = null;
-                    if (t == PrefType.INT.ToString())
-                    {
-                        type = PrefType.INT;
-                        v = int.Parse(prefLine[2]);
-                    }
-                    else if (t == PrefType.BOOL.ToString())
-                    {
-                        type = PrefType.BOOL;
-                        v = bool.Parse(prefLine[2]);
-                    }
-                    else if (t == PrefType.FLOAT.ToString())
-                    {
-                        type = PrefType.FLOAT;
-                        v = float.Parse(prefLine[2]);
-                    }
-                    else if (t == PrefType.STRING.ToString())
-                    {
-                        type = PrefType.STRING;
-                        v = prefLine[2];
-                    }
-                    else if (t == PrefType.COLOR.ToString())
-                    {
-                        type = PrefType.COLOR;
-                        v = new Color(float.Parse(prefLine[2]), float.Parse(prefLine[3]), float.Parse(prefLine[4]), float.Parse(prefLine[5]));
-                    }
-                    else if (t == PrefType.VECTOR2.ToString())
-                    {
-                        type = PrefType.VECTOR2;
-                        v = new Vector2(float.Parse(prefLine[2]), float.Parse(prefLine[3]));
-                    }
-                    else if (t == PrefType.VECTOR3.ToString())
-                    {
-                        type = PrefType.VECTOR3;
-                        v = new Vector3(float.Parse(prefLine[2]), float.Parse(prefLine[3]), float.Parse(prefLine[4]));
-                    }
-                    else if (t == PrefType.RECT.ToString())
-                    {
-                        type = PrefType.RECT;
-                        v = new Rect(float.Parse(prefLine[2]), float.Parse(prefLine[3]), float.Parse(prefLine[4]), float.Parse(prefLine[5]));
-                    }
-                    else if (t == PrefType.ENUM.ToString())
-                    {
-                        type = PrefType.ENUM;
-                        Type enumType = Type.GetType(prefLine[3]);
-                        v = Enum.Parse(enumType, prefLine[2]);
-                    }
-
-                    Pref p = new Pref(key, type, v);
-
-                    keyAndValues.Add(key, p);
-                }
-            }
-            reader.Close();
+    static void GetPrepare() {
+        // 最初にLoadされていない時に defaultDataPath からLoad
+        if (currentInstance == null) {
+            CreateInstanceByPath(dataPath);
+            currentInstance.Load();
         }
     }
 
-    static string GetAllKeyAndValues()
-    {
-        string str = "";
-        foreach (KeyValuePair<string, Pref> p in keyAndValues)
-        {
-            string key = p.Key;
-            Pref pref = p.Value;
-
-            PrefType type = pref.type;
-            if(key != pref.key){
-                Debug.LogWarning("Error");
-                continue;
-            }
-
-            string vStr = pref.v.ToString();
-
-            if (type == PrefType.COLOR)
-            {
-                Color c = ((Color)(pref.v));
-                vStr = c.r + "," + c.g + "," + c.b + "," + c.a;
-            }
-            else if (type == PrefType.RECT)
-            {
-                Rect c = ((Rect)(pref.v));
-                vStr = c.x + "," + c.y + "," + c.width + "," + c.height;
-            }
-            else if (type == PrefType.VECTOR3)
-            {
-                Vector3 c = ((Vector3)(pref.v));
-                vStr = c.x + "," + c.y + "," + c.z;
-            }
-            else if (type == PrefType.VECTOR2)
-            {
-                Vector2 c = ((Vector2)(pref.v));
-                vStr = c.x + "," + c.y;
-            }
-            else if (type == PrefType.BOOL)
-            {
-                bool b = ((bool)(pref.v));
-                vStr = b.ToString();
-            }
-            else if (type == PrefType.ENUM)
-            {
-                object e = pref.v;
-                Type t = pref.v.GetType();
-                vStr = e.ToString()+","+t.ToString();
-            }
-            str += key + "," + type + "," + vStr + "\n";
+    static void CreateInstanceByPath(string path = "") {
+        if (keyAndInstance == null) {
+            keyAndInstance = new Dictionary<string, PlayerPrefsFileObject>();
         }
-        return str;
+        if (path == "") {
+            path = dataPath;
+        }
+        if (keyAndInstance.ContainsKey(path)) {
+            currentInstance = keyAndInstance[path];
+        }
+        else {
+            currentInstance = new PlayerPrefsFileObject(path);
+            keyAndInstance[path] = currentInstance;
+        }
     }
-    //
-    public static bool HasKey(string key)
-    {
-        return keyAndValues.ContainsKey(key);
-    }
-
-    public static void DeleteKey(string key)
-    {
-        keyAndValues.Remove(key);
-    }
-
-    public static void DeleteAll()
-    {
-        keyAndValues.Clear();
-    }
-
     #endregion
-    static void Init()
-    {
-        if (keyAndValues == null) {
-            keyAndValues = new Dictionary<string, Pref>();
-        }
+
+    //
+    //
+    public static bool HasKey(string key) {
+        return currentInstance.HasKey(key);
     }
 
-	// original method
-	public static void SetInt(string key, int v)
-	{
-        Init();
+    public static void DeleteKey(string key) {
+        currentInstance.DeleteKey(key);
+    }
 
-        Pref pref = new Pref(key, PrefType.INT, v);
-        if (!keyAndValues.ContainsKey(key)){
-            keyAndValues.Add(key, pref);
-        }else{
-            keyAndValues[key] = pref;
-        }
-	}
+    public static void DeleteAll() {
+        currentInstance.DeleteAll();
+    }
+    // original method
+    public static void SetInt(string key, int v) {
+        CreateInstanceByPath();
 
-    public static int GetInt(string key, int defaultValue)
-	{
-        Load();
+        currentInstance.SetInt(key, v);
+    }
 
-        if(keyAndValues.ContainsKey(key)){
-            return (int)(keyAndValues[key].v);
-        }
-        return defaultValue;
-	}
-	
-	public static void SetFloat(string key, float v)
-	{
-        Init();
+    public static int GetInt(string key, int defaultValue) {
+        GetPrepare();
 
-        Pref pref = new Pref(key, PrefType.FLOAT, v);
-        if (!keyAndValues.ContainsKey(key)){
-            keyAndValues.Add(key, pref);
-        } else{
-            keyAndValues[key] = pref;
-        }
-	}
+        return currentInstance.GetInt(key, defaultValue);
+    }
 
-	public static float GetFloat(string key, float defaultValue)
-	{
-        Load();
+    public static void SetFloat(string key, float v) {
+        CreateInstanceByPath();
 
-        if (keyAndValues.ContainsKey(key)){
-            return (float)(keyAndValues[key].v);
-        }
-        return defaultValue;
-	}
-	
-	public static void SetString(string key, string str)
-	{
-        Init();
+        currentInstance.SetFloat(key, v);
+    }
 
-        Pref pref = new Pref(key, PrefType.STRING, str);
-        if (!keyAndValues.ContainsKey(key)){
-            keyAndValues.Add(key, pref);
-        } else{
-            keyAndValues[key] = pref;
-        }
-	}
+    public static float GetFloat(string key, float defaultValue) {
+        GetPrepare();
 
-    public static string GetString(string key, string defaultValue)
-	{
-        Load();
+        return currentInstance.GetFloat(key, defaultValue);
+    }
 
-        if (keyAndValues.ContainsKey(key)) {
-            return (string)(keyAndValues[key].v);
-        }
-        return defaultValue;
-	}
-    
+    public static void SetString(string key, string str) {
+        CreateInstanceByPath();
+
+        currentInstance.SetString(key, str);
+    }
+
+    public static string GetString(string key, string defaultValue) {
+        GetPrepare();
+
+        return currentInstance.GetString(key, defaultValue);
+    }
+
     // bool
-    public static void SetBool(string key, bool b)
-	{
-        Init();
+    public static void SetBool(string key, bool b) {
+        CreateInstanceByPath();
 
-        Pref pref = new Pref(key, PrefType.BOOL, b);
-        if (!keyAndValues.ContainsKey(key)) {
-            keyAndValues.Add(key, pref);
-        } else {
-            keyAndValues[key] = pref;
-        }
-	}
+        currentInstance.SetBool(key, b);
+    }
 
-	public static bool GetBool(string key, bool defaultValue)
-	{
-        Load();
+    public static bool GetBool(string key, bool defaultValue) {
+        GetPrepare();
 
-        if (keyAndValues.ContainsKey(key)) {
-            return (bool)(keyAndValues[key].v);
-        }
-        return defaultValue;
-	}
+        return currentInstance.GetBool(key, defaultValue);
+    }
 
-	// Vector3
-    public static void SetVector3(string key, Vector3 v)
-	{
-        Init();
+    // Vector3
+    public static void SetVector3(string key, Vector3 v) {
+        CreateInstanceByPath();
 
-        Pref pref = new Pref(key, PrefType.VECTOR3, v);
-        if (!keyAndValues.ContainsKey(key)){
-            keyAndValues.Add(key, pref);
-        } else {
-            keyAndValues[key] = pref;
-        }
-	}
-	
-    public static Vector3 GetVector3(string key, Vector3 defaultValue)
-	{
-        Load();
+        currentInstance.SetVector3(key, v);
+    }
 
-        if (keyAndValues.ContainsKey(key)){
-            return (Vector3)(keyAndValues[key].v);
-        }
-        return defaultValue;
-	}
-	
-	// Vector2
-    public static void SetVector2(string key, Vector2 v)
-	{
-        Init();
+    public static Vector3 GetVector3(string key, Vector3 defaultValue) {
+        GetPrepare();
 
-        Pref pref = new Pref(key, PrefType.VECTOR2, v);
-        if (!keyAndValues.ContainsKey(key)) {
-            keyAndValues.Add(key, pref);
-        }else{
-            keyAndValues[key] = pref;
-        }
-	}
-	
-    public static Vector2 GetVector2(string key, Vector2 defaultValue)
-	{
-        Load();
+        return currentInstance.GetVector3(key, defaultValue);
+    }
 
-        if (keyAndValues.ContainsKey(key)) {
-            return (Vector2)(keyAndValues[key].v);
-        }
-        return defaultValue;
-	}
+    // Vector2
+    public static void SetVector2(string key, Vector2 v) {
+        CreateInstanceByPath();
 
-	// Rect
-    public static void SetRect(string key, Rect v)
-	{
-        Init();
+        currentInstance.SetVector2(key, v);
+    }
 
-        Pref pref = new Pref(key, PrefType.RECT, v);
-        if (!keyAndValues.ContainsKey(key)){
-            keyAndValues.Add(key, pref);
-        } else{
-            keyAndValues[key] = pref;
-        }
-	}
+    public static Vector2 GetVector2(string key, Vector2 defaultValue) {
+        GetPrepare();
 
-    public static Rect GetRect(string key, Rect defaultValue)
-	{
-        Load();
+        return currentInstance.GetVector2(key, defaultValue);
+    }
 
-        if (keyAndValues.ContainsKey(key)) {
-            return (Rect)(keyAndValues[key].v);
-        }
-        return defaultValue;
-	}
+    // Rect
+    public static void SetRect(string key, Rect v) {
+        CreateInstanceByPath();
 
-	// Color
-	public static void SetColor(string key, Color v)
-	{
-        Init();
+        currentInstance.SetRect(key, v);
+    }
 
-        Pref pref = new Pref(key, PrefType.COLOR, v);
-        if (!keyAndValues.ContainsKey(key)) {
-            keyAndValues.Add(key, pref);
-        } else {
-            keyAndValues[key] = pref;
-        }
-	}
+    public static Rect GetRect(string key, Rect defaultValue) {
+        GetPrepare();
 
-    public static Color GetColor(string key, Color defaultValue)
-	{
-        Load();
+        return currentInstance.GetRect(key, defaultValue);
+    }
 
-        if (keyAndValues.ContainsKey(key)) {
-            return (Color)(keyAndValues[key].v);
-        }
-        return defaultValue;
-	}
+    // Color
+    public static void SetColor(string key, Color v) {
+        CreateInstanceByPath();
 
-	// Enum
-	public static void SetEnum(string key, object v)
-	{
-        Init();
+        currentInstance.SetColor(key, v);
+    }
 
-        Pref pref = new Pref(key, PrefType.ENUM, v);
-        if (!keyAndValues.ContainsKey(key)) {
-            keyAndValues.Add(key, pref);
-        } else {
-            keyAndValues[key] = pref;
-        }
-	}
+    public static Color GetColor(string key, Color defaultValue) {
+        GetPrepare();
 
-    public static object GetEnum(string key, object defaultValue)
-	{
-        Load();
+        return currentInstance.GetColor(key, defaultValue);
+    }
 
-        if (keyAndValues.ContainsKey(key)) {
-            return (keyAndValues[key].v);
-        }
-        return defaultValue;
-	}
+    // Enum
+    public static void SetEnum(string key, object v) {
+        CreateInstanceByPath();
+
+        currentInstance.SetEnum(key, v);
+    }
+
+    public static object GetEnum(string key, object defaultValue) {
+        GetPrepare();
+
+        return currentInstance.GetEnum(key, defaultValue);
+    }
 }

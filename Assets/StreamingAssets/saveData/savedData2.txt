@@ -1,0 +1,5 @@
+PrefsTest2.test1,INT,200
+PrefsTest2.testColor,COLOR,0.1586208,0,1,1
+PrefsTest2.rect,RECT,10,10,200,200
+PrefsTest2.vec2,VECTOR2,123,456
+PrefsTest2.boolean,BOOL,False

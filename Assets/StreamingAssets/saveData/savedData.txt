@@ -1,0 +1,9 @@
+test1,INT,1000
+test2,FLOAT,2000
+test3,STRING,testTest
+testColor,COLOR,0.8206897,0,1,1
+rect,RECT,10,10,200,200
+vec2,VECTOR2,100,200
+vec3,VECTOR3,300,400,500
+boolean,BOOL,True
+enumType,ENUM,C,TEST_ENUM

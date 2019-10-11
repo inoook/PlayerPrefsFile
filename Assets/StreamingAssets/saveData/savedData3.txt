@@ -1,0 +1,5 @@
+PrefsTest3.test1,INT,300
+PrefsTest3.testColor,COLOR,1,0.9724138,0,1
+PrefsTest3.rect,RECT,10,10,200,200
+PrefsTest3.vec2,VECTOR2,789,101112
+PrefsTest3.boolean,BOOL,True
